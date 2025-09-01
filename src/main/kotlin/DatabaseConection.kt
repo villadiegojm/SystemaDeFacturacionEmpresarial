@@ -132,4 +132,26 @@ class DatabaseConection (private val url : String ) {
             }
         }
     }
+
+    fun listarFacturas (): MutableList<Factura>{
+        val facturas = mutableListOf<Factura>()
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.createStatement()
+            statement.use {
+                val resultSet = it.executeQuery("SELECT * FROM facturas")
+                resultSet.use {
+                    while (resultSet.next()){
+                        val numero = resultSet.getInt("factura_numero")
+                        val cliente_id = resultSet.getInt("cliente_id")
+                        val total = resultSet.getDouble("total")
+                        val fecha = resultSet.getDate("fecha")
+                        val factura = Factura(numero,cliente_id,total,fecha)
+                        facturas.add(factura)
+                    }
+                }
+            }
+        }
+        return facturas
+    }
 }

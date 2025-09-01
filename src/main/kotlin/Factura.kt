@@ -1,7 +1,8 @@
 package com.jmvn.proyectos
 
 import java.time.LocalDateTime
+import java.util.Date
 
-class Factura (var numero: Int, var cliente: Cliente?, var items: MutableList<Item?>, var total: Double, var fecha: LocalDateTime) {
+class Factura (var numero: Int, var cliente_id: Int, var total: Double, var fecha: Date) {
 
 }
