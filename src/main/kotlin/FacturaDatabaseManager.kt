@@ -11,4 +11,9 @@ class FacturaDatabaseManager (private val url : String) {
         databaseConection.guardarFactura()
 
     }
+
+    fun listadoFacturas () : List<Factura> {
+        val listaFacturas = databaseConection.listarFacturas()
+        return listaFacturas
+    }
 }

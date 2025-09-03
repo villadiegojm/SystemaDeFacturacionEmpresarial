@@ -15,7 +15,18 @@ fun main() {
         seleccion = readln().toInt()
         when(seleccion){
             1 -> facturasManager.crearFactura()
-            2 -> println("lista de facturas")//Factura.listarFacturas()
+            2 -> {
+                val facturas = facturasManager.listadoFacturas()
+                if (facturas.isEmpty()){
+                    println("***NO HAY FACTUTAS GENERADAS***")
+                } else {
+                    println("-------------------------------------")
+                    println("FACT NUMERO----------TOTAL----------FECHA")
+                    facturas.forEach(){factura ->
+                        println("     ${factura.numero}---------${factura.total}----------${factura.fecha}")
+                    }
+                }
+            }
             3 -> {
                 val clientes = clientesManager.listarClientes()
                 if (clientes.isEmpty()){
