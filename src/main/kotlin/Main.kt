@@ -53,7 +53,7 @@ fun main() {
                     }
                 }
             }
-            5 -> println("imprimir factura")// Factura.imprimirFacturas()
+            5 -> facturasManager.imprimeFactura()
             6 -> println("\nGRACIAS")
         }
     } while(seleccion != 6)

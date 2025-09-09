@@ -9,6 +9,22 @@ class DatabaseConection (private val url : String ) {
     var cliente_id = 0
     var cedula = 0
     var items = mutableListOf<Item>()
+    val sql = """SELECT
+                 f.factura_numero,
+                 f.fecha,
+                 f.total,
+                 c.nombre  AS nombre_cliente,
+                 c.telefono  AS telefono_cliente,
+                 a.codigo   AS codigo_articulo,
+                 a.nombre   AS nombre_articulo,
+                 a.precio   AS precio_articulo,
+                 i.cantidad,
+                 i.subtotal
+             FROM facturas  f
+             JOIN clientes  c ON f.cliente_id = c.id
+             JOIN items     i ON f.factura_numero = i.factura_id
+             JOIN articulos a ON i.articulo_id = a.id
+             WHERE f.factura_numero = ?;"""
 
     fun validarCliente (){
 
@@ -153,5 +169,65 @@ class DatabaseConection (private val url : String ) {
             }
         }
         return facturas
+    }
+
+    fun imprimirFactura () {
+        var numero = 0
+        var encontrarFactura = false
+        do {
+            print("NUMERO DE FACTURA QUE DESEA IMPRIMIR: ")
+            numero = readln().toInt()
+            encontrarFactura = validarFactura(numero)
+        }while (encontrarFactura == false)
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.prepareStatement(sql)
+            statement.use {
+                it.setInt(1,numero)
+                val resultSet = statement.executeQuery()
+                println("\n=============================================")
+                var encabezadoFactura = false
+                var total = 0.0
+                while (resultSet.next()){
+                    if (encabezadoFactura == false){
+                        println("FACTURA NUMERO: ${resultSet.getInt("factura_numero")}")
+                        println("CLIENTE: ${resultSet.getString("nombre_cliente")}")
+                        println("TELEFONO: ${resultSet.getInt("telefono_cliente")}")
+                        println("FECHA: ${resultSet.getDate("fecha")}\n")
+                        total = resultSet.getDouble("total")
+                        encabezadoFactura = true
+                        println("-------------------RESUMEN-------------------")
+                        println("codigo | nombre | precio un | cant | subtotal")
+                    }
+                    val codigo = resultSet.getInt("codigo_articulo")
+                    val nombre = resultSet.getString("nombre_articulo")
+                    val precio = resultSet.getDouble("precio_articulo")
+                    val cantidad = resultSet.getInt("cantidad")
+                    val subtotal = resultSet.getDouble("subtotal")
+                    println("$codigo     $nombre     $precio     $cantidad     $subtotal")
+                }
+                println("=============================================")
+                println("TOTAL FACTURA:________________________$total")
+            }
+        }
+    }
+
+
+    fun validarFactura (numeroFactura : Int) : Boolean {
+        var facturaExistente = true
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.createStatement()
+            statement.use {
+                val resulset = it.executeQuery("SELECT * FROM facturas WHERE factura_numero = $numeroFactura")
+                resulset.use {
+                    if (!resulset.next()){
+                        println("***LA FACTURA NO EXISTE***\n")
+                        facturaExistente = false
+                    }
+                }
+            }
+        }
+        return facturaExistente
     }
 }

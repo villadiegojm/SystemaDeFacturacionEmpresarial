@@ -16,4 +16,9 @@ class FacturaDatabaseManager (private val url : String) {
         val listaFacturas = databaseConection.listarFacturas()
         return listaFacturas
     }
+
+    fun imprimeFactura (){
+
+        databaseConection.imprimirFactura()
+    }
 }
