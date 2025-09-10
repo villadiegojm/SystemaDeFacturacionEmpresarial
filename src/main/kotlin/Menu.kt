@@ -3,11 +3,12 @@ package com.jmvn.proyectos
 class Menu {
     fun mostrar() {
         println("\n--------MENU--------")
-        println("1. crear factura")
-        println("2. listar factura")
-        println("3. lista clientes")
-        println("4. lista articulos")
-        println("5. Imprimir factura")
-        println("6. SALIR")
+        println("1. CREAR FACTURA")
+        println("2. LISTAR FACTURA")
+        println("3. LISTAR CLIENTES")
+        println("4. LISTAR ARTICULOS")
+        println("5. IMPRIMIR FACTURA")
+        println("6. REGISTRAR CLIENTE")
+        println("7. SALIR")
     }
 }

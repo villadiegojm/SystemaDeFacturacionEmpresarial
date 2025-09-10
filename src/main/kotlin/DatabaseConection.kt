@@ -31,7 +31,13 @@ class DatabaseConection (private val url : String ) {
         do {
             println("digite su numero de cedula: ")
             cedula = readln().toInt()
-            val validarCliente = consultarCedula(cedula)
+            var validarCliente = consultarCedula(cedula)
+            print("desea registrar cliente? s/n: ")
+            val registar = readln().lowercase()
+            if (registar == "s"){
+                cedula = ClienteDatabaseManager(url).registrarCliente()
+                validarCliente = consultarCedula(cedula)
+            }
         } while (validarCliente == 0)
     }
 

@@ -54,8 +54,9 @@ fun main() {
                 }
             }
             5 -> facturasManager.imprimeFactura()
-            6 -> println("\nGRACIAS")
+            6 -> clientesManager.registrarCliente()
+            7 -> println("\nGRACIAS")
         }
-    } while(seleccion != 6)
+    } while(seleccion != 7)
 
 }
