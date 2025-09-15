@@ -1,6 +1,7 @@
 package com.jmvn.proyectos
 
 import java.sql.DriverManager
+import java.sql.ResultSet
 
 class DatabaseConection (private val url : String ) {
 
@@ -32,11 +33,27 @@ class DatabaseConection (private val url : String ) {
             println("digite su numero de cedula: ")
             cedula = readln().toInt()
             var validarCliente = consultarCedula(cedula)
-            print("desea registrar cliente? s/n: ")
-            val registar = readln().lowercase()
-            if (registar == "s"){
-                cedula = ClienteDatabaseManager(url).registrarCliente()
-                validarCliente = consultarCedula(cedula)
+
+            if (validarCliente == 0){
+                print("desea registrar cliente? s/n: ")
+                val registar = readln().lowercase()
+
+                if (registar == "s"){
+                    println("entra a if")
+                    cedula = ClienteDatabaseManager(url).registrarCliente()
+                    validarCliente = consultarCedula(cedula)
+                }
+            }else {
+                val connection = DriverManager.getConnection(url)
+                val statement = connection.createStatement()
+                statement.use {
+                    val ResultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula = $cedula")
+                    ResultSet.use {
+                            val nombre = ResultSet.getString("nombre")
+                            println("\nCLIENTE: $nombre  CEDULA: $cedula")
+                    }
+                }
+                connection.close()
             }
         } while (validarCliente == 0)
     }
@@ -95,6 +112,11 @@ class DatabaseConection (private val url : String ) {
                 statement.executeBatch()
             }
         }
+    }
+
+    fun cancelarFactura (){
+        items = mutableListOf()
+        totalFactura = 0.0
     }
 
 

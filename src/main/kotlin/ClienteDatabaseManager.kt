@@ -48,7 +48,7 @@ class ClienteDatabaseManager (private val url : String) {
                 it.setInt(3,telefono)
                 it.setString(4,estado)
                 it.executeUpdate()
-                println("***REGISTRO EXITOSO***")
+                println("\n***REGISTRO EXITOSO***")
             }
         }
         return cedula
