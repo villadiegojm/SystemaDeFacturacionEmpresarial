@@ -4,9 +4,7 @@ package com.jmvn.proyectos
 fun main() {
 
     val url = "jdbc:sqlite:SystemaFacturacion.db"
-    val clientesManager = ClienteDatabaseManager(url)
-    val articulosManager = ArticuloDatabaseManager(url)
-    val facturasManager = FacturaDatabaseManager(url)
+    val facturasManager = FacturaManager(url)
     val menu = Menu()
     do {
         menu.mostrar()
@@ -29,7 +27,7 @@ fun main() {
                 }
             }
             3 -> {
-                val clientes = clientesManager.listarClientes()
+                val clientes = DatabaseConection(url).listarClientes()
                 if (clientes.isEmpty()){
                     println("no hay clientes en la base")
                 }else {
@@ -44,7 +42,7 @@ fun main() {
                 }
             }
             4 -> {
-                val articulos = articulosManager.listar()
+                val articulos = DatabaseConection(url).listarArticulos()
                 if (articulos.isEmpty()){
                     println("no hay articulos")
                 }else {
@@ -56,8 +54,26 @@ fun main() {
                     }
                 }
             }
-            5 -> facturasManager.imprimeFactura()
-            6 -> clientesManager.registrarCliente()
+            5 -> {
+                var numero = 0
+                var encontrarFactura = false
+                do {
+                    print("NUMERO DE FACTURA QUE DESEA IMPRIMIR: ")
+                    numero = readln().toInt()
+                    encontrarFactura = DatabaseConection(url).validarFactura(numero)
+                }while (encontrarFactura == false)
+                facturasManager.imprimirFactura(numero)
+            }
+            6 -> {
+                    println("nombre completo: ")
+                    val nombre = readln()
+                    print("numero de cedula: ")
+                    val cedula = readln().toInt()
+                    print("numero de telefono: ")
+                    val telefono = readln().toInt()
+                    val estado = "activo" //Default
+                    DatabaseConection(url).registrarCliente(nombre, cedula, telefono, estado)
+            }
             7 -> println("\nGRACIAS")
         }
     } while(seleccion != 7)

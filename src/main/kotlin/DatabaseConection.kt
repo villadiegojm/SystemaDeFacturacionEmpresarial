@@ -8,6 +8,7 @@ class DatabaseConection (private val url : String ) {
                  f.factura_numero,
                  f.fecha,
                  f.total,
+                 c.id AS cliente_id,
                  c.nombre  AS nombre_cliente,
                  c.telefono  AS telefono_cliente,
                  a.codigo   AS codigo_articulo,
@@ -21,8 +22,8 @@ class DatabaseConection (private val url : String ) {
              JOIN articulos a ON i.articulo_id = a.id
              WHERE f.factura_numero = ?;"""
 
-    fun validarDatosCliente (cedula : Int) : List<Cliente> {
-        val datos = mutableListOf<Cliente>()
+    fun consultarDatosCliente (cedula : Int) : Cliente {
+        val cliente : Cliente
         val connection = DriverManager.getConnection(url)
         val statement = connection.createStatement()
         statement.use {
@@ -31,27 +32,11 @@ class DatabaseConection (private val url : String ) {
                 val nombre = ResultSet.getString("nombre")
                 val cedula = ResultSet.getInt("cedula")
                 val telefono = ResultSet.getInt("telefono")
-                println("\nCLIENTE:  $nombre")
-                println("CEDULA:   $cedula")
-                println("TELEFONO: $telefono")
+                val estado = ResultSet.getString("estado")
+                cliente = Cliente(nombre, cedula, telefono, estado)
             }
         }
-        return datos
-    }
-
-    fun timbrarArticulos (codigoArticulo: Int, totalFactura: Double, items: MutableList<Item>) : Pair<Double, MutableList<Item>>{
-        var total = totalFactura
-
-            print("cantidad de articulos: ")
-            var cantidad: Int = readln().toInt()
-            var precio: Double = buscarPrecioArticulo(codigoArticulo)
-            var subtotal = precio * cantidad
-            var idArticulo = buscarIdArticulo(codigoArticulo)
-            total += subtotal
-            var item = Item(idArticulo,cantidad,subtotal)
-            items.add(item)
-
-        return Pair(total, items)
+        return cliente
     }
 
     fun guardarFactura (clienteId: Int, totalFactura: Double,items: MutableList<Item>) {
@@ -88,8 +73,7 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun consultarIdCliente (cedula: Int): Int{
-        var clienteId = 0
+    fun consultarCedula (cedula: Int): Pair<Boolean,Int>{
         val connection = DriverManager.getConnection(url)
         connection.use {
             val statement = it.createStatement()
@@ -98,35 +82,17 @@ class DatabaseConection (private val url : String ) {
                 resultSet.use {
                     if (!resultSet.next()) {
                         println("\n***LA CEDULA NO EXISTE***")
-                        return 0
+                        return Pair(false,0)
                     } else {
-                        clienteId = resultSet.getInt("id")
-                    }
-                }
-            }
-        }
-        return clienteId
-    }
-
-    fun consultarCedula (cedula: Int): Boolean{
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula= $cedula")
-                resultSet.use {
-                    if (!resultSet.next()) {
-                        println("\n***LA CEDULA NO EXISTE***")
-                        return false
-                    } else {
-                        return true
+                         val clienteId = resultSet.getInt("id")
+                        return Pair(true,clienteId)
                     }
                 }
             }
         }
     }
 
-    fun validarDatosArticulo (codigo: Int) : List<Cliente> {
+    fun consultarDatosArticulo (codigo: Int) : List<Cliente> {
         val datos = mutableListOf<Cliente>()
         val connection = DriverManager.getConnection(url)
         val statement = connection.createStatement()
@@ -204,48 +170,6 @@ class DatabaseConection (private val url : String ) {
         return facturas
     }
 
-    fun imprimirFactura () {
-        var numero = 0
-        var encontrarFactura = false
-        do {
-            print("NUMERO DE FACTURA QUE DESEA IMPRIMIR: ")
-            numero = readln().toInt()
-            encontrarFactura = validarFactura(numero)
-        }while (encontrarFactura == false)
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                it.setInt(1,numero)
-                val resultSet = statement.executeQuery()
-                println("\n=============================================")
-                var encabezadoFactura = false
-                var total = 0.0
-                while (resultSet.next()){
-                    if (encabezadoFactura == false){
-                        println("FACTURA NUMERO: ${resultSet.getInt("factura_numero")}")
-                        println("CLIENTE: ${resultSet.getString("nombre_cliente")}")
-                        println("TELEFONO: ${resultSet.getInt("telefono_cliente")}")
-                        println("FECHA: ${resultSet.getDate("fecha")}\n")
-                        total = resultSet.getDouble("total")
-                        encabezadoFactura = true
-                        println("-------------------RESUMEN-------------------")
-                        println("codigo | nombre | precio un | cant | subtotal")
-                    }
-                    val codigo = resultSet.getInt("codigo_articulo")
-                    val nombre = resultSet.getString("nombre_articulo")
-                    val precio = resultSet.getDouble("precio_articulo")
-                    val cantidad = resultSet.getInt("cantidad")
-                    val subtotal = resultSet.getDouble("subtotal")
-                    println("$codigo     $nombre     $precio     $cantidad     $subtotal")
-                }
-                println("=============================================")
-                println("TOTAL FACTURA:________________________$total")
-            }
-        }
-    }
-
-
     fun validarFactura (numeroFactura : Int) : Boolean {
         var facturaExistente = true
         val connection = DriverManager.getConnection(url)
@@ -262,5 +186,140 @@ class DatabaseConection (private val url : String ) {
             }
         }
         return facturaExistente
+    }
+
+    fun datosFactura (numeroFactura :Int) :Pair<Factura,Cliente>? {
+        var sql = """SELECT 
+                        f.factura_numero,
+                        f.cliente_id,
+                        f.total,
+                        f.fecha,
+                        c.nombre,
+                        c.cedula,
+                        c.telefono,
+                        c.estado
+                    FROM facturas f 
+                    JOIN clientes c ON f.cliente_id = c.id
+                    WHERE f.factura_numero = ?; """
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.prepareStatement(sql)
+            statement.use {
+                statement.setInt(1,numeroFactura)
+                val resultSet = statement.executeQuery()
+                if (resultSet.next()) {
+                    val numeroFactura = resultSet.getInt("factura_numero")
+                    val cliente_id = resultSet.getInt("cliente_id")
+                    val fecha = resultSet.getDate("fecha")
+                    val total = resultSet.getDouble("total")
+                    val nombre = resultSet.getString("nombre")
+                    val cedula = resultSet.getInt("cedula")
+                    val telefono = resultSet.getInt("telefono")
+                    val estado = resultSet.getString("estado")
+                    val factura = Factura(numeroFactura, cliente_id, total, fecha)
+                    val cliente = Cliente(nombre, cedula, telefono, estado)
+                    return Pair(factura,cliente)
+                }else return null
+            }
+        }
+    }
+
+    fun detallesFactura (numeroFactura: Int) : List<DetallesFactura>{
+        val detalles = mutableListOf<DetallesFactura>()
+        val sql = """SELECT
+                        a.codigo,
+                        a.nombre,
+                        a.precio,
+                        i.cantidad,
+                        i.subtotal
+                    FROM items i
+                    JOIN facturas f  ON i.factura_id = f.factura_numero
+                    JOIN articulos a ON i.articulo_id = a.id
+                    WHERE f.factura_numero = ?;"""
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.prepareStatement(sql)
+            statement.use {
+                statement.setInt(1, numeroFactura)
+                val resultSet = statement.executeQuery()
+                while (resultSet.next()){
+                    val codigo = resultSet.getInt("codigo")
+                    val nombre = resultSet.getString("nombre")
+                    val precio = resultSet.getDouble("precio")
+                    val cantidad = resultSet.getInt("cantidad")
+                    val subtotal = resultSet.getDouble("subtotal")
+                    val detalle = DetallesFactura(codigo, nombre, precio, cantidad, subtotal)
+                    detalles.add(detalle)
+                }
+            }
+        }
+        return detalles
+    }
+
+    fun listarArticulos (): MutableList<Articulo>{
+        val articulos = mutableListOf<Articulo>()
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.createStatement()
+            statement.use {
+                val resultSet = it.executeQuery("SELECT * FROM articulos")
+                resultSet.use {
+                    while (resultSet.next()){
+                        val id = resultSet.getInt("id")
+                        val codigo = resultSet.getInt("codigo")
+                        val nombre = resultSet.getString("nombre")
+                        val precio = resultSet.getDouble("precio")
+                        val descripcion = resultSet.getString("descripcion")
+                        val cantidadStok = resultSet.getInt("cantidadStok")
+                        val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStok)
+                        articulos.add(articulo)
+                    }
+                }
+
+            }
+
+        }
+        return articulos
+    }
+
+    fun listarClientes (): MutableList<Cliente>{
+
+        val listaClientes = mutableListOf<Cliente>()
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.createStatement()
+            statement.use {
+                val resultSet = it.executeQuery("SELECT * FROM clientes")
+                resultSet.use {
+                    while (resultSet.next()){
+                        val id = resultSet.getInt("id")
+                        val nombre = resultSet.getString("nombre")
+                        val cedula = resultSet.getInt("cedula")
+                        val telefono = resultSet.getInt("telefono")
+                        val estado = resultSet.getString("estado")
+                        listaClientes.add(Cliente(nombre,cedula,telefono,estado))
+
+                    }
+                }
+            }
+        }
+        return listaClientes
+    }
+
+    fun registrarCliente (nombre: String, cedula: Int, telefono: Int, estado: String):Int{
+        val conn = DriverManager.getConnection(url)
+        conn.use {
+            val sql = "INSERT INTO clientes (nombre, cedula, telefono, estado ) VALUES (?, ?, ?, ?)"
+            val statement = it.prepareStatement(sql)
+            statement.use {
+                it.setString(1,nombre)
+                it.setInt(2,cedula)
+                it.setInt(3,telefono)
+                it.setString(4,estado)
+                it.executeUpdate()
+                println("\n***REGISTRO EXITOSO***")
+            }
+        }
+        return cedula
     }
 }
