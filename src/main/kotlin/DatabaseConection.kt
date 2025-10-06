@@ -27,12 +27,12 @@ class DatabaseConection (private val url : String ) {
         val connection = DriverManager.getConnection(url)
         val statement = connection.createStatement()
         statement.use {
-            val ResultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula = $cedula")
-            ResultSet.use {
-                val nombre = ResultSet.getString("nombre")
-                val cedula = ResultSet.getInt("cedula")
-                val telefono = ResultSet.getInt("telefono")
-                val estado = ResultSet.getString("estado")
+            val resultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula = $cedula")
+            resultSet.use {
+                val nombre = resultSet.getString("nombre")
+                val cedula = resultSet.getInt("cedula")
+                val telefono = resultSet.getInt("telefono")
+                val estado = resultSet.getString("estado")
                 cliente = Cliente(nombre, cedula, telefono, estado)
             }
         }
@@ -73,7 +73,7 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun consultarCedula (cedula: Int): Pair<Boolean,Int>{
+    fun consultarCedula (cedula: Int, mensaje: String): Pair<Boolean,Int>{
         val connection = DriverManager.getConnection(url)
         connection.use {
             val statement = it.createStatement()
@@ -81,7 +81,7 @@ class DatabaseConection (private val url : String ) {
                 val resultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula= $cedula")
                 resultSet.use {
                     if (!resultSet.next()) {
-                        println("\n***LA CEDULA NO EXISTE***")
+                        println("\n$mensaje")
                         return Pair(false,0)
                     } else {
                          val clienteId = resultSet.getInt("id")
@@ -92,19 +92,19 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun consultarDatosArticulo (codigo: Int) : List<Cliente> {
-        val datos = mutableListOf<Cliente>()
+    fun consultarDatosArticulo (codigo: Int) : List<Articulo> {
+        val datos = mutableListOf<Articulo>()
         val connection = DriverManager.getConnection(url)
         val statement = connection.createStatement()
         statement.use {
-            val ResultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
-            ResultSet.use {
-                val nombre = ResultSet.getString("nombre")
-                val precio = ResultSet.getDouble("precio")
-                val descripcion = ResultSet.getString("descripcion")
-                println("\nARTICULO:      $nombre")
-                println("DESCRIPCION:   $descripcion")
-                println("PRECIO:        $precio")
+            val resultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
+            resultSet.use {
+                val nombre = resultSet.getString("nombre")
+                val precio = resultSet.getDouble("precio")
+                val descripcion = resultSet.getString("descripcion")
+                val cantidadStock = resultSet.getInt("cantidadstok")
+                val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStock)
+                datos.add(articulo)
             }
         }
         return datos
@@ -129,7 +129,7 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun buscarIdArticulo (codigo:Int): Int{
+    fun buscarIdArticulo (codigo:Int, mensaje: String): Pair<Boolean, Int> {
         val connection = DriverManager.getConnection(url)
         connection.use {
             val statement = it.createStatement()
@@ -137,11 +137,11 @@ class DatabaseConection (private val url : String ) {
                 val resultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
                 resultSet.use {
                     if (!resultSet.next()){
-                        println("\n**ARTICULO NO EXISTE. INGRESE UN CODIGO VALIDO**")
-                        return 0
+                        println(mensaje)
+                        return Pair(false, 0)
                     }else {
                         val idArticulo = resultSet.getInt("id")
-                        return idArticulo
+                        return Pair(true, idArticulo)
                     }
                 }
             }
@@ -307,9 +307,9 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun registrarCliente (nombre: String, cedula: Int, telefono: Int, estado: String):Int{
+        val sql = "INSERT INTO clientes (nombre, cedula, telefono, estado ) VALUES (?, ?, ?, ?)"
         val conn = DriverManager.getConnection(url)
         conn.use {
-            val sql = "INSERT INTO clientes (nombre, cedula, telefono, estado ) VALUES (?, ?, ?, ?)"
             val statement = it.prepareStatement(sql)
             statement.use {
                 it.setString(1,nombre)
@@ -321,5 +321,21 @@ class DatabaseConection (private val url : String ) {
             }
         }
         return cedula
+    }
+
+    fun crearArticulo (codigo: Int, nombre: String, precio: Double, descripcion: String, cantidadDeStock: Int){
+        val sql = "INSERT INTO articulos (codigo, nombre, precio, descripcion, cantidadStok) VALUES (?, ?, ?, ?, ?)"
+        val conn = DriverManager.getConnection(url)
+        conn.use {
+            val statement = it.prepareStatement(sql)
+            statement.use {
+                it.setInt(1,codigo)
+                it.setString(2,nombre)
+                it.setDouble(3,precio)
+                it.setString(4,descripcion)
+                it.setInt(5,cantidadDeStock)
+                it.executeUpdate()
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ class Menu {
         println("4. LISTAR ARTICULOS")
         println("5. IMPRIMIR FACTURA")
         println("6. REGISTRAR CLIENTE")
-        println("7. SALIR")
+        println("7. CREAR ARTICULO")
+        println("8. SALIR")
     }
 }

@@ -5,6 +5,7 @@ fun main() {
 
     val url = "jdbc:sqlite:SystemaFacturacion.db"
     val facturasManager = FacturaManager(url)
+    val articulosManager = ArticuloManager(url)
     val menu = Menu()
     do {
         menu.mostrar()
@@ -50,7 +51,9 @@ fun main() {
                     println("CODIGO       NOMBRE       PRECIO")
                     println("-----------------------------------")
                     articulos.forEach(){ articulo ->
-                        println("${articulo.codigo.toString().padEnd(10)}${articulo.nombre.padEnd(20)}${articulo.precio.toString().padStart(8)}")
+                        print("${articulo.codigo.toString().padEnd(10)}")
+                        print("${articulo.nombre.padEnd(20)}")
+                        println("${articulo.precio.toString().padStart(8)}")
                     }
                 }
             }
@@ -65,17 +68,13 @@ fun main() {
                 facturasManager.imprimirFactura(numero)
             }
             6 -> {
-                    println("nombre completo: ")
-                    val nombre = readln()
-                    print("numero de cedula: ")
-                    val cedula = readln().toInt()
-                    print("numero de telefono: ")
-                    val telefono = readln().toInt()
-                    val estado = "activo" //Default
-                    DatabaseConection(url).registrarCliente(nombre, cedula, telefono, estado)
+                    ClienteManager(url).registroCliente()
             }
-            7 -> println("\nGRACIAS")
+            7 -> {
+                articulosManager.creacionArticulo()
+            }
+            8 -> println("\nGRACIAS")
         }
-    } while(seleccion != 7)
+    } while(seleccion != 8)
 
 }

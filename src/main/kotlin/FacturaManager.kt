@@ -16,22 +16,19 @@ class FacturaManager (private val url : String) {
         do {
             print("digite su numero de cedula: ")
             cedula = readln().toInt()
-            var validarCliente = databaseConection.consultarCedula(cedula).first
+            val mensaje = "***LA CEDULA NO EXISTE***"
+            var validarCliente = databaseConection.consultarCedula(cedula,mensaje).first
 
             if (validarCliente == false){
                 print("desea registrar cliente? s/n: ")
                 val registar = readln().lowercase()
 
                 if (registar == "s"){
-                    println("nombre completo: ")
-                    val nombre = readln()
-                    print("numero de cedula: ")
-                    val cedula = readln().toInt()
-                    print("numero de telefono: ")
-                    val telefono = readln().toInt()
-                    val estado = "activo" //Default
-                    databaseConection.registrarCliente(nombre, cedula, telefono, estado)
-                    validarCliente = databaseConection.consultarCedula(cedula).first
+
+                    val mensaje = ""
+                    ClienteManager(url).registroCliente()
+                    validarCliente = databaseConection.consultarCedula(cedula, mensaje).first
+
                 }
             }else {
                 val datos = databaseConection.consultarDatosCliente(cedula)
@@ -57,19 +54,27 @@ class FacturaManager (private val url : String) {
                 codigoArticulo = readln().toInt()
                 var precioEncontrado = databaseConection.buscarPrecioArticulo(codigoArticulo)
 
-                    databaseConection.consultarDatosArticulo(codigoArticulo)
-                    print("cantidad de articulos: ")
-                    var cantidad: Int = readln().toInt()
+                    if (precioEncontrado != 0.0){
+                        val datosArticulo = databaseConection.consultarDatosArticulo(codigoArticulo)
+                        datosArticulo.forEach { articulo ->
+                            println("\nARTICULO:      ${articulo.nombre}")
+                            println("DESCRIPCION:   ${articulo.descripcion}")
+                            println("PRECIO:        ${articulo.precio}\n")
+                        }
+                        val mensaje = ""
+                        print("cantidad de articulos: ")
+                        var cantidad: Int = readln().toInt()
 
-                    var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
-                    var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo)
+                        var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
+                        var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo, mensaje).second
 
-                    val resultado = timbrarArticulos(cantidad, precio, idArticulo, totalFactura, items)
-                    totalFactura = resultado.first
-                    items = resultado.second
+                        val resultado = timbrarArticulos(cantidad, precio, idArticulo, totalFactura, items)
+                        totalFactura = resultado.first
+                        items = resultado.second
 
-                    print("desea llevar otro articulo s/n: ")
-                    timbrar = readln().lowercase()
+                        print("desea llevar otro articulo s/n: ")
+                        timbrar = readln().lowercase()
+                    }
 
                 } while (precioEncontrado == 0.0)
             }
@@ -78,11 +83,12 @@ class FacturaManager (private val url : String) {
             print("TOTALIZAR Y GUARDAR: s/n ")
             guardar = readln().lowercase()
             if (guardar == "s"){
-                clienteId = databaseConection.consultarCedula(cedula).second
+                val mensaje = ""
+                clienteId = databaseConection.consultarCedula(cedula,mensaje).second
                 databaseConection.guardarFactura(clienteId,totalFactura,items)
                 println("***FACTURA GUARDADA EXITOSAMENTE***")
             } else
-                println("FACTURA GUARDADA PARCIALMENTE")
+                println("***FACTURA GUARDADA PARCIALMENTE***")
                 cancelarFactura(items,totalFactura)
         }
     }
@@ -119,7 +125,11 @@ class FacturaManager (private val url : String) {
         println("---------------------------------------------")
         val detalles = databaseConection.detallesFactura(numero)
         detalles.forEach { items ->
-            println("${items.codigo.toString().padEnd(6)}${items.nombre.padEnd(13)}${items.precioUnitario.toString().padEnd(10)}${items.cantidad.toString().padEnd(4)}${items.subtotal.toString().padStart(10)}")
+            print("${items.codigo.toString().padEnd(6)}")
+            print("${items.nombre.padEnd(13)}")
+            print("${items.precioUnitario.toString().padEnd(10)}")
+            print("${items.cantidad.toString().padEnd(4)}")
+            println("${items.subtotal.toString().padStart(10)}")
         }
         println("=============================================")
         println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(29)}")
@@ -133,6 +143,8 @@ class FacturaManager (private val url : String) {
         totalFactura = 0.0
     }
 }
+
+//"${items.codigo.toString().padEnd(6)}${items.nombre.padEnd(13)}${items.precioUnitario.toString().padEnd(10)}${items.cantidad.toString().padEnd(4)}${items.subtotal.toString().padStart(10)}"
 
 
 
