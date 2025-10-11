@@ -148,20 +148,30 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun listarFacturas (): MutableList<Factura>{
-        val facturas = mutableListOf<Factura>()
+    fun listarFacturas (): MutableList<ListadoFacturas>{
+        val sql = """SELECT
+                        f.factura_numero,
+                        f.cliente_id,
+                        f.total,
+                        f.fecha,
+                        c.nombre
+                       FROM facturas f
+                       LEFT JOIN clientes c ON f.cliente_id = c.id
+                       WHERE c.nombre IS NOT NULL;"""
+        val facturas = mutableListOf<ListadoFacturas>()
         val connection = DriverManager.getConnection(url)
         connection.use {
-            val statement = it.createStatement()
+            val statement = it.prepareStatement(sql)
             statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM facturas")
+                val resultSet = it.executeQuery()
                 resultSet.use {
                     while (resultSet.next()){
                         val numero = resultSet.getInt("factura_numero")
                         val cliente_id = resultSet.getInt("cliente_id")
                         val total = resultSet.getDouble("total")
                         val fecha = resultSet.getDate("fecha")
-                        val factura = Factura(numero,cliente_id,total,fecha)
+                        val nombre = resultSet.getString("nombre")
+                        val factura = ListadoFacturas(numero,nombre,total,fecha)
                         facturas.add(factura)
                     }
                 }
@@ -262,7 +272,7 @@ class DatabaseConection (private val url : String ) {
         connection.use {
             val statement = it.createStatement()
             statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM articulos")
+                val resultSet = it.executeQuery("SELECT * FROM articulos ORDER BY codigo")
                 resultSet.use {
                     while (resultSet.next()){
                         val id = resultSet.getInt("id")
@@ -289,7 +299,7 @@ class DatabaseConection (private val url : String ) {
         connection.use {
             val statement = it.createStatement()
             statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM clientes")
+                val resultSet = it.executeQuery("SELECT * FROM clientes ORDER BY nombre")
                 resultSet.use {
                     while (resultSet.next()){
                         val id = resultSet.getInt("id")

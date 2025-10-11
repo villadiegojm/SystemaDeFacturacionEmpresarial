@@ -19,11 +19,12 @@ fun main() {
                 if (facturas.isEmpty()){
                     println("***NO HAY FACTUTAS GENERADAS***")
                 } else {
-                    println("====================================")
-                    println("              FACTURAS                ")
-                    println("FAC NUM________TOTAL________FECHA")
+                    println("================================================")
+                    println("                   FACTURAS                   ")
+                    println("________________________________________________")
+                    println("NUM________CLIENTE__________TOTAL________FECHA")
                     facturas.forEach(){factura ->
-                        println("   ${factura.numero.toString().padEnd(12)}${factura.total.toString().padEnd(10)}${factura.fecha.toString().padStart(12)}")
+                        println("${factura.factura_numero.toString().padEnd(6)}${factura.cliente.padEnd(22)}${factura.total.toString().padEnd(10)}${factura.fecha.toString().padStart(12)}")
                     }
                 }
             }
@@ -40,6 +41,8 @@ fun main() {
                         contador ++
                         println("${contador.toString().padEnd(4)} ${cliente.nombre.padEnd(20)} ${cliente.cedula.toString().padEnd(8)} ${cliente.telefono.toString().padStart(10)}")
                     }
+                    println("_____________________________________________")
+                    println("\nTOTAL CLIENTES:____________________________$contador")
                 }
             }
             4 -> {
@@ -47,12 +50,12 @@ fun main() {
                 if (articulos.isEmpty()){
                     println("no hay articulos")
                 }else {
-                    println("___________________________________")
-                    println("CODIGO       NOMBRE       PRECIO")
-                    println("-----------------------------------")
+                    println("_______________________________________")
+                    println("CODIGO         ARTICULO              PRECIO")
+                    println("---------------------------------------")
                     articulos.forEach(){ articulo ->
                         print("${articulo.codigo.toString().padEnd(10)}")
-                        print("${articulo.nombre.padEnd(20)}")
+                        print("${articulo.nombre.padEnd(22)}")
                         println("${articulo.precio.toString().padStart(8)}")
                     }
                 }

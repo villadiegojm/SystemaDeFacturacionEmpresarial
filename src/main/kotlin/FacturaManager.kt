@@ -102,7 +102,7 @@ class FacturaManager (private val url : String) {
         return Pair(total, items)
     }
 
-    fun listadoFacturas () : List<Factura> {
+    fun listadoFacturas () : List<ListadoFacturas> {
         val listaFacturas = databaseConection.listarFacturas()
         return listaFacturas
     }
@@ -121,13 +121,13 @@ class FacturaManager (private val url : String) {
         println("$cliente${datosCliente?.nombre?.padStart(35)}")
         println("$fecha${(datosFactura?.fecha?:0).toString().padStart(37)}")
         println("\n-------------------RESUMEN-------------------")
-        println("codigo | nombre | prec unit | cant | subtotal")
+        println("cod | articulo | prec unit | cant | subtotal")
         println("---------------------------------------------")
         val detalles = databaseConection.detallesFactura(numero)
         detalles.forEach { items ->
             print("${items.codigo.toString().padEnd(6)}")
             print("${items.nombre.padEnd(13)}")
-            print("${items.precioUnitario.toString().padEnd(10)}")
+            print("${items.precioUnitario.toString().padEnd(12)}")
             print("${items.cantidad.toString().padEnd(4)}")
             println("${items.subtotal.toString().padStart(10)}")
         }
