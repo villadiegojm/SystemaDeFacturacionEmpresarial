@@ -55,25 +55,32 @@ class FacturaManager (private val url : String) {
                 var precioEncontrado = databaseConection.buscarPrecioArticulo(codigoArticulo)
 
                     if (precioEncontrado != 0.0){
+                        var cantidaStock = 0
                         val datosArticulo = databaseConection.consultarDatosArticulo(codigoArticulo)
                         datosArticulo.forEach { articulo ->
+                            cantidaStock = articulo.cantidadDeStock
                             println("\nARTICULO:      ${articulo.nombre}")
                             println("DESCRIPCION:   ${articulo.descripcion}")
                             println("PRECIO:        ${articulo.precio}\n")
                         }
                         val mensaje = ""
-                        print("cantidad de articulos: ")
-                        var cantidad: Int = readln().toInt()
+                        do {
+                            print("cantidad de articulos: ")
+                            var cantidad: Int = readln().toInt()
+                            if (cantidad <= cantidaStock){
+                                var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
+                                var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo, mensaje).second
 
-                        var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
-                        var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo, mensaje).second
+                                val resultado = timbrarArticulos(cantidad, precio, idArticulo, totalFactura, items)
+                                totalFactura = resultado.first
+                                items = resultado.second
 
-                        val resultado = timbrarArticulos(cantidad, precio, idArticulo, totalFactura, items)
-                        totalFactura = resultado.first
-                        items = resultado.second
-
-                        print("desea llevar otro articulo s/n: ")
-                        timbrar = readln().lowercase()
+                                print("desea llevar otro articulo s/n: ")
+                                timbrar = readln().lowercase()
+                            }else {
+                                println("\n***NO HAY STOCK SUFICIENTE! DISPONIBLE: $cantidaStock ***")
+                            }
+                        }while (cantidad > cantidaStock)
                     }
 
                 } while (precioEncontrado == 0.0)
@@ -84,8 +91,16 @@ class FacturaManager (private val url : String) {
             guardar = readln().lowercase()
             if (guardar == "s"){
                 val mensaje = ""
+                var id = 0
+                var cantidad = 0
                 clienteId = databaseConection.consultarCedula(cedula,mensaje).second
                 databaseConection.guardarFactura(clienteId,totalFactura,items)
+
+                items.forEach(){item ->
+                    id = item.id
+                    cantidad = item.cantidad
+                    databaseConection.actualizarStock(id,cantidad)
+                }
                 println("***FACTURA GUARDADA EXITOSAMENTE***")
             } else
                 println("***FACTURA GUARDADA PARCIALMENTE***")
@@ -144,7 +159,6 @@ class FacturaManager (private val url : String) {
     }
 }
 
-//"${items.codigo.toString().padEnd(6)}${items.nombre.padEnd(13)}${items.precioUnitario.toString().padEnd(10)}${items.cantidad.toString().padEnd(4)}${items.subtotal.toString().padStart(10)}"
 
 
 

@@ -148,6 +148,18 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
+    fun actualizarStock(id: Int, cantidad : Int) {
+        val sql = "UPDATE articulos SET cantidadstok = cantidadstok - ? WHERE id = $id"
+        val connection = DriverManager.getConnection(url)
+        connection.use {
+            val statement = it.prepareStatement(sql)
+            statement.setInt(1,cantidad)
+            statement.use {
+                it.executeUpdate()
+            }
+        }
+    }
+
     fun listarFacturas (): MutableList<ListadoFacturas>{
         val sql = """SELECT
                         f.factura_numero,
