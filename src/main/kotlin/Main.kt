@@ -50,13 +50,14 @@ fun main() {
                 if (articulos.isEmpty()){
                     println("no hay articulos")
                 }else {
-                    println("_______________________________________")
-                    println("CODIGO         ARTICULO              PRECIO")
-                    println("---------------------------------------")
+                    println("___________________________________________________")
+                    println("CODIGO       ARTICULO           PRECIO         STOCK")
+                    println("---------------------------------------------------")
                     articulos.forEach(){ articulo ->
                         print("${articulo.codigo.toString().padEnd(10)}")
                         print("${articulo.nombre.padEnd(22)}")
-                        println("${articulo.precio.toString().padStart(8)}")
+                        print("${articulo.precio.toString().padStart(8)}")
+                        println("$${articulo.cantidadDeStock.toString().padStart(10)}")
                     }
                 }
             }

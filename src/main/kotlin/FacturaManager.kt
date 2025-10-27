@@ -61,7 +61,8 @@ class FacturaManager (private val url : String) {
                             cantidaStock = articulo.cantidadDeStock
                             println("\nARTICULO:      ${articulo.nombre}")
                             println("DESCRIPCION:   ${articulo.descripcion}")
-                            println("PRECIO:        ${articulo.precio}\n")
+                            println("PRECIO:        ${articulo.precio}")
+                            println("DISPONIBLE:    ${articulo.cantidadDeStock}\n")
                         }
                         val mensaje = ""
                         do {
@@ -87,7 +88,7 @@ class FacturaManager (private val url : String) {
             }
 
             var guardar = ""
-            print("TOTALIZAR Y GUARDAR: s/n ")
+            print("TOTALIZAR Y GUARDAR s/n: ")
             guardar = readln().lowercase()
             if (guardar == "s"){
                 val mensaje = ""
