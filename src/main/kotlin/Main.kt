@@ -16,15 +16,42 @@ fun main() {
             1 -> facturasManager.crearFactura()
             2 -> {
                 val facturas = facturasManager.listadoFacturas()
+                var contador = 0
+                val size = facturas.size
                 if (facturas.isEmpty()){
                     println("***NO HAY FACTUTAS GENERADAS***")
                 } else {
-                    println("================================================")
-                    println("                   FACTURAS                   ")
-                    println("________________________________________________")
-                    println("NUM________CLIENTE__________TOTAL________FECHA")
-                    facturas.forEach(){factura ->
-                        println("${factura.factura_numero.toString().padEnd(6)}${factura.cliente.padEnd(22)}${factura.total.toString().padEnd(10)}${factura.fecha.toString().padStart(12)}")
+                    var limit = 0
+                    var bandera = true
+                    while (bandera == true){
+
+                        if (size - contador > 10){
+                            limit = contador + 10
+                        }else {
+                            limit = size
+                        }
+                        println("================================================")
+                        println("                   FACTURAS                   ")
+                        println("________________________________________________")
+                        println("NUM________CLIENTE__________TOTAL________FECHA")
+
+
+                        facturas.subList(contador,limit).forEach(){factura ->
+                            print("${factura.factura_numero.toString().padEnd(6)}")
+                            print("${factura.cliente.padEnd(22)}")
+                            print("${factura.total.toString().padEnd(10)}")
+                            println("${factura.fecha.toString().padStart(12)}")
+                            contador ++
+                        }
+                        print("\nDESEA MOSTRAR LA SIGUIENTE PAGINA s/n: ")
+                        var siguientePagina = readln().toString().lowercase()
+                        if (siguientePagina != "s") {
+                            bandera = false
+                        } else if (contador == size) {
+                            println("\n***NO HAY MAS REGISTROS POR MOSTRAR!***")
+                            bandera = false
+                        }
+
                     }
                 }
             }

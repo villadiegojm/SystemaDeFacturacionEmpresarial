@@ -169,7 +169,8 @@ class DatabaseConection (private val url : String ) {
                         c.nombre
                        FROM facturas f
                        LEFT JOIN clientes c ON f.cliente_id = c.id
-                       WHERE c.nombre IS NOT NULL;"""
+                       WHERE c.nombre IS NOT NULL
+                       ORDER BY fecha DESC;"""
         val facturas = mutableListOf<ListadoFacturas>()
         val connection = DriverManager.getConnection(url)
         connection.use {
