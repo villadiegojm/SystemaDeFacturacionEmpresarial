@@ -89,6 +89,21 @@ fun main() {
                 }
             }
             5 -> {
+                val articulos = DatabaseConection(url).listarArticulos()
+                if (articulos.isEmpty()){
+                    println("NO HAY INVENTARIO")
+                }else {
+                    println("______________________________________________")
+                    println("CODIGO       ARTICULO           DISPONIBLE")
+                    println("----------------------------------------------")
+                    articulos.forEach() { articulo ->
+                        print("${articulo.codigo.toString().padEnd(10)}")
+                        print("${articulo.nombre.padEnd(22)}")
+                        println("${articulo.cantidadDeStock.toString().padStart(8)}")
+                    }
+                }
+            }
+            6 -> {
                 var numero = 0
                 var encontrarFactura = false
                 do {
@@ -98,14 +113,14 @@ fun main() {
                 }while (encontrarFactura == false)
                 facturasManager.imprimirFactura(numero)
             }
-            6 -> {
+            7 -> {
                     ClienteManager(url).registroCliente()
             }
-            7 -> {
+            8 -> {
                 articulosManager.creacionArticulo()
             }
-            8 -> println("\nGRACIAS")
+            9 -> println("\nGRACIAS")
         }
-    } while(seleccion != 8)
+    } while(seleccion != 9)
 
 }

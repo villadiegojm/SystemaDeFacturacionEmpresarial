@@ -7,9 +7,10 @@ class Menu {
         println("2. LISTAR FACTURA")
         println("3. LISTAR CLIENTES")
         println("4. LISTAR ARTICULOS")
-        println("5. IMPRIMIR FACTURA")
-        println("6. REGISTRAR CLIENTE")
-        println("7. CREAR ARTICULO")
-        println("8. SALIR")
+        println("5. REPORTE INVENTARIO")
+        println("6. IMPRIMIR FACTURA")
+        println("7. REGISTRAR CLIENTE")
+        println("8. CREAR ARTICULO")
+        println("9. SALIR")
     }
 }
