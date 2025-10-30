@@ -56,13 +56,16 @@ class FacturaManager (private val url : String) {
 
                     if (precioEncontrado != 0.0){
                         var cantidaStock = 0
+                        var descuento = 0
                         val datosArticulo = databaseConection.consultarDatosArticulo(codigoArticulo)
                         datosArticulo.forEach { articulo ->
                             cantidaStock = articulo.cantidadDeStock
+                            descuento = articulo.descuento
                             println("\nARTICULO:      ${articulo.nombre}")
                             println("DESCRIPCION:   ${articulo.descripcion}")
                             println("PRECIO:        ${articulo.precio}")
-                            println("DISPONIBLE:    ${articulo.cantidadDeStock}\n")
+                            println("DESCUENTO:     $descuento%")
+                            println("DISPONIBLE:    $cantidaStock\n")
                         }
                         val mensaje = ""
                         do {
@@ -72,7 +75,7 @@ class FacturaManager (private val url : String) {
                                 var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
                                 var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo, mensaje).second
 
-                                val resultado = timbrarArticulos(cantidad, precio, idArticulo, totalFactura, items)
+                                val resultado = timbrarArticulos(cantidad, precio, descuento, idArticulo, totalFactura, items)
                                 totalFactura = resultado.first
                                 items = resultado.second
 
@@ -109,9 +112,9 @@ class FacturaManager (private val url : String) {
         }
     }
 
-    fun timbrarArticulos ( cantidad: Int, precio :Double, idArticulo : Int, totalFactura: Double, items: MutableList<Item>) : Pair<Double, MutableList<Item>>{
+    fun timbrarArticulos ( cantidad: Int, precio :Double, descuento: Int, idArticulo : Int, totalFactura: Double, items: MutableList<Item>) : Pair<Double, MutableList<Item>>{
         var total = totalFactura
-        var subtotal = precio * cantidad
+        var subtotal= precio * cantidad  * (1 - descuento/100.0)
         total += subtotal
         var item = Item(idArticulo,cantidad,subtotal)
         items.add(item)
@@ -129,27 +132,27 @@ class FacturaManager (private val url : String) {
         val cliente = "CLIENTE:"
         val fecha = "FECHA:"
 
-        println("\n=============================================")
+        println("\n===========================================================")
         val resultado = databaseConection.datosFactura(numero)
         val datosFactura = resultado?.first
         val datosCliente = resultado?.second
-        println("${factura}${(datosFactura?.numero?:0).toString().padStart(28)}")
-        println("$cliente${datosCliente?.nombre?.padStart(35)}")
-        println("$fecha${(datosFactura?.fecha?:0).toString().padStart(37)}")
-        println("\n-------------------RESUMEN-------------------")
-        println("cod | articulo | prec unit | cant | subtotal")
-        println("---------------------------------------------")
+        println("${factura}${(datosFactura?.numero?:0).toString().padStart(43)}")
+        println("$cliente${datosCliente?.nombre?.padStart(50)}")
+        println("$fecha${(datosFactura?.fecha?:0).toString().padStart(52)}")
+        println("\n--------------------------RESUMEN--------------------------")
+        println("cod   |   articulo   |   prec unit   |   cant   |  subtotal")
+        println("-----------------------------------------------------------")
         val detalles = databaseConection.detallesFactura(numero)
         detalles.forEach { items ->
-            print("${items.codigo.toString().padEnd(6)}")
-            print("${items.nombre.padEnd(13)}")
-            print("${items.precioUnitario.toString().padEnd(12)}")
-            print("${items.cantidad.toString().padEnd(4)}")
-            println("${items.subtotal.toString().padStart(10)}")
+            print("${items.codigo.toString().padEnd(8)}")
+            print("${items.nombre.take(16).padEnd(18)}")
+            print("${items.precioUnitario.toString().padEnd(16)}")
+            print("${items.cantidad.toString().padEnd(5)}")
+            println("${items.subtotal.toString().padStart(12)}")
         }
-        println("=============================================")
-        println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(29)}")
-        println("_____________________________________________")
+        println("===========================================================")
+        println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(45)}")
+        println("___________________________________________________________")
     }
 
     fun cancelarFactura (items: MutableList<Item>, totalFactura: Double){

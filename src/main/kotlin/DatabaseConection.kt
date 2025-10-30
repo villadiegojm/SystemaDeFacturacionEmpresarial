@@ -103,7 +103,8 @@ class DatabaseConection (private val url : String ) {
                 val precio = resultSet.getDouble("precio")
                 val descripcion = resultSet.getString("descripcion")
                 val cantidadStock = resultSet.getInt("cantidadstok")
-                val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStock)
+                val descuento = resultSet.getInt("porcentaje_descuento")
+                val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStock,descuento)
                 datos.add(articulo)
             }
         }
@@ -294,7 +295,8 @@ class DatabaseConection (private val url : String ) {
                         val precio = resultSet.getDouble("precio")
                         val descripcion = resultSet.getString("descripcion")
                         val cantidadStok = resultSet.getInt("cantidadStok")
-                        val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStok)
+                        val descuento = resultSet.getInt("porcentaje_descuento")
+                        val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStok,descuento)
                         articulos.add(articulo)
                     }
                 }
