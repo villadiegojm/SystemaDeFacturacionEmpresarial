@@ -121,8 +121,8 @@ class FacturaManager (private val url : String) {
         return Pair(total, items)
     }
 
-    fun listadoFacturas () : List<ListadoFacturas> {
-        val listaFacturas = databaseConection.listarFacturas()
+    fun listadoFacturas (offset: Int) : List<ListadoFacturas> {
+        val listaFacturas = databaseConection.listarFacturas(offset)
         return listaFacturas
     }
 

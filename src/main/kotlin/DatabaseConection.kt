@@ -161,7 +161,7 @@ class DatabaseConection (private val url : String ) {
         }
     }
 
-    fun listarFacturas (): MutableList<ListadoFacturas>{
+    fun listarFacturas (offset: Int): MutableList<ListadoFacturas>{
         val sql = """SELECT
                         f.factura_numero,
                         f.cliente_id,
@@ -171,11 +171,12 @@ class DatabaseConection (private val url : String ) {
                        FROM facturas f
                        LEFT JOIN clientes c ON f.cliente_id = c.id
                        WHERE c.nombre IS NOT NULL
-                       ORDER BY fecha DESC;"""
+                       ORDER BY fecha DESC LIMIT 10 OFFSET ?;"""
         val facturas = mutableListOf<ListadoFacturas>()
         val connection = DriverManager.getConnection(url)
         connection.use {
             val statement = it.prepareStatement(sql)
+            statement.setInt(1,offset)
             statement.use {
                 val resultSet = it.executeQuery()
                 resultSet.use {
