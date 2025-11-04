@@ -78,8 +78,8 @@ fun main() {
                     articulos.forEach(){ articulo ->
                         print("${articulo.codigo.toString().padEnd(10)}")
                         print("${articulo.nombre.padEnd(22)}")
-                        print("${articulo.precio.toString().padStart(8)}")
-                        println("$${articulo.cantidadDeStock.toString().padStart(10)}")
+                        print("$${articulo.precio.toString().padStart(8)}")
+                        println("${articulo.cantidadDeStock.toString().padStart(10)}")
                     }
                 }
             }

@@ -115,8 +115,9 @@ class FacturaManager (private val url : String) {
     fun timbrarArticulos ( cantidad: Int, precio :Double, descuento: Int, idArticulo : Int, totalFactura: Double, items: MutableList<Item>) : Pair<Double, MutableList<Item>>{
         var total = totalFactura
         var subtotal= precio * cantidad  * (1 - descuento/100.0)
+        var descuentoEnPesos = (precio * cantidad) - subtotal
         total += subtotal
-        var item = Item(idArticulo,cantidad,subtotal)
+        var item = Item(idArticulo,cantidad,descuentoEnPesos,subtotal)
         items.add(item)
         return Pair(total, items)
     }
@@ -140,18 +141,20 @@ class FacturaManager (private val url : String) {
         println("$cliente${datosCliente?.nombre?.padStart(50)}")
         println("$fecha${(datosFactura?.fecha?:0).toString().padStart(52)}")
         println("\n--------------------------RESUMEN--------------------------")
-        println("cod   |   articulo   |   prec unit   |   cant   |  subtotal")
+        println("Articulo   |")
+        println("Cantidad   |   Precio unit   |   Descuento   |   Subtotal")
         println("-----------------------------------------------------------")
         val detalles = databaseConection.detallesFactura(numero)
         detalles.forEach { items ->
-            print("${items.codigo.toString().padEnd(8)}")
-            print("${items.nombre.take(16).padEnd(18)}")
-            print("${items.precioUnitario.toString().padEnd(16)}")
-            print("${items.cantidad.toString().padEnd(5)}")
-            println("${items.subtotal.toString().padStart(12)}")
+            print("${items.codigo.toString().padEnd(4)}")
+            println("${items.nombre.take(22).padEnd(22)}")
+            print("${items.cantidad.toString().padEnd(14)}")
+            print("${items.precioUnitario.toString().padEnd(18)}")
+            print("${items.descuento.toString().padEnd(16)}")
+            println("${items.subtotal.toString().padStart(10)}")
         }
         println("===========================================================")
-        println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(45)}")
+        println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(44)}")
         println("___________________________________________________________")
     }
 

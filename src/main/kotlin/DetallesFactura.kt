@@ -5,5 +5,6 @@ data class DetallesFactura (
         val nombre: String,
         val precioUnitario: Double,
         val cantidad: Int,
+        val descuento: Double,
         val subtotal: Double
 )

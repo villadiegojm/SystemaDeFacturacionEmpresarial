@@ -56,7 +56,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun guardarItems (items: List<Item>, facturaId: Int){
-        val sql = "INSERT INTO items (factura_id, articulo_id, cantidad, subtotal) VALUES (?, ?, ?, ?)"
+        val sql = "INSERT INTO items (factura_id, articulo_id, cantidad, descuento, subtotal) VALUES (?, ?, ?, ?, ?)"
         val connection = DriverManager.getConnection(url)
         connection.use {
             val statement = it.prepareStatement(sql)
@@ -65,7 +65,8 @@ class DatabaseConection (private val url : String ) {
                     it.setInt(1,facturaId)
                     it.setInt(2,item.id)
                     it.setInt(3,item.cantidad)
-                    it.setDouble(4,item.subtotal)
+                    it.setDouble(4,item.descuento)
+                    it.setDouble(5,item.subtotal)
                     statement.addBatch()
                 }
                 statement.executeBatch()
@@ -256,6 +257,7 @@ class DatabaseConection (private val url : String ) {
                         a.nombre,
                         a.precio,
                         i.cantidad,
+                        i.descuento,
                         i.subtotal
                     FROM items i
                     JOIN facturas f  ON i.factura_id = f.factura_numero
@@ -272,8 +274,9 @@ class DatabaseConection (private val url : String ) {
                     val nombre = resultSet.getString("nombre")
                     val precio = resultSet.getDouble("precio")
                     val cantidad = resultSet.getInt("cantidad")
+                    val descuento = resultSet.getDouble("descuento")
                     val subtotal = resultSet.getDouble("subtotal")
-                    val detalle = DetallesFactura(codigo, nombre, precio, cantidad, subtotal)
+                    val detalle = DetallesFactura(codigo, nombre, precio, cantidad, descuento, subtotal)
                     detalles.add(detalle)
                 }
             }
