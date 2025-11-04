@@ -149,9 +149,9 @@ class FacturaManager (private val url : String) {
             print("${items.codigo.toString().padEnd(4)}")
             println("${items.nombre.take(22).padEnd(22)}")
             print("${items.cantidad.toString().padEnd(14)}")
-            print("${items.precioUnitario.toString().padEnd(18)}")
-            print("${items.descuento.toString().padEnd(16)}")
-            println("${items.subtotal.toString().padStart(10)}")
+            print("${items.precioUnitario.toString().padEnd(16)}")
+            print("${items.descuento.toString().padStart(10)}")
+            println("${items.subtotal.toString().padStart(17)}")
         }
         println("===========================================================")
         println("TOTAL FACTURA:${(datosFactura?.total?:0).toString().padStart(44)}")
