@@ -255,7 +255,7 @@ class DatabaseConection (private val url : String ) {
         val sql = """SELECT
                         a.codigo,
                         a.nombre,
-                        a.precio,
+                        i.precio,
                         i.cantidad,
                         i.descuento,
                         i.subtotal
