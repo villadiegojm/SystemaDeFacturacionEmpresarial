@@ -1,284 +1,250 @@
 package com.jmvn.proyectos
 
+import com.jmvn.proyectos.tables.tables.references.ARTICULOS
+import com.jmvn.proyectos.tables.tables.references.CLIENTES
+import com.jmvn.proyectos.tables.tables.references.FACTURAS
+import com.jmvn.proyectos.tables.tables.references.ITEMS
+import org.jooq.impl.DSL
 import java.sql.DriverManager
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 class DatabaseConection (private val url : String ) {
 
-    val sql = """SELECT
-                 f.factura_numero,
-                 f.fecha,
-                 f.total,
-                 c.id AS cliente_id,
-                 c.nombre  AS nombre_cliente,
-                 c.telefono  AS telefono_cliente,
-                 a.codigo   AS codigo_articulo,
-                 a.nombre   AS nombre_articulo,
-                 a.precio   AS precio_articulo,
-                 i.cantidad,
-                 i.subtotal
-             FROM facturas  f
-             JOIN clientes  c ON f.cliente_id = c.id
-             JOIN items     i ON f.factura_numero = i.factura_id
-             JOIN articulos a ON i.articulo_id = a.id
-             WHERE f.factura_numero = ?;"""
-
     fun consultarDatosCliente (cedula : Int) : Cliente {
-        val cliente : Cliente
-        val connection = DriverManager.getConnection(url)
-        val statement = connection.createStatement()
-        statement.use {
-            val resultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula = $cedula")
-            resultSet.use {
-                val nombre = resultSet.getString("nombre")
-                val cedula = resultSet.getInt("cedula")
-                val telefono = resultSet.getInt("telefono")
-                val estado = resultSet.getString("estado")
-                cliente = Cliente(nombre, cedula, telefono, estado)
-            }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val record = it.select()
+                .from(CLIENTES)
+                .where(CLIENTES.CEDULA.eq(cedula))
+                .fetchOne()
+            val nombre = record?.get(ARTICULOS.NOMBRE,String::class.java)?:""
+            val cedula = record?.get(CLIENTES.CEDULA,Int::class.java)?:0
+            val telefono = record?.get(CLIENTES.TELEFONO,Int::class.java)?:0
+            val estado = record?.get(CLIENTES.ESTADO,String::class.java)?:""
+            val cliente = Cliente(nombre, cedula, telefono, estado)
+            return cliente
         }
-        return cliente
     }
 
     fun guardarFactura (clienteId: Int, totalFactura: Double,items: MutableList<Item>) {
-        var facturaId = 0
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                it.executeUpdate("INSERT INTO facturas (cliente_id, total) VALUES ($clienteId, $totalFactura)")
-                val resultSet = it.generatedKeys
-                if (resultSet.next()){
-                    facturaId = resultSet.getInt(1)
-                }
-            }
-            guardarItems(items, facturaId)
+        var facturaId:Int
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val execute = it.insertInto(FACTURAS)
+                .set(FACTURAS.CLIENTE_ID, clienteId)
+                .set(FACTURAS.TOTAL, totalFactura.toFloat())
+                .returning(FACTURAS.FACTURA_NUMERO)
+                .fetchOne()
+            facturaId = execute?.facturaNumero ?: 0
         }
+        guardarItems(items, facturaId)
     }
 
     fun guardarItems (items: List<Item>, facturaId: Int){
-        val sql = "INSERT INTO items (factura_id, articulo_id, cantidad, descuento, subtotal) VALUES (?, ?, ?, ?, ?)"
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                for (item in items){
-                    it.setInt(1,facturaId)
-                    it.setInt(2,item.id)
-                    it.setInt(3,item.cantidad)
-                    it.setDouble(4,item.descuento)
-                    it.setDouble(5,item.subtotal)
-                    statement.addBatch()
-                }
-                statement.executeBatch()
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            for (item in items){
+                it.insertInto(ITEMS)
+                    .set(ITEMS.FACTURA_ID,facturaId)
+                    .set(ITEMS.ARTICULO_ID,item.id)
+                    .set(ITEMS.CANTIDAD,item.cantidad)
+                    .set(ITEMS.DESCUENTO,item.descuento.toFloat())
+                    .set(ITEMS.SUBTOTAL,item.subtotal.toFloat())
+                    .execute()
             }
         }
     }
 
     fun consultarCedula (cedula: Int, mensaje: String): Pair<Boolean,Int>{
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM clientes WHERE cedula= $cedula")
-                resultSet.use {
-                    if (!resultSet.next()) {
-                        println("\n$mensaje")
-                        return Pair(false,0)
-                    } else {
-                         val clienteId = resultSet.getInt("id")
-                        return Pair(true,clienteId)
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val record = it.select().from(CLIENTES).where(CLIENTES.CEDULA.eq(cedula)).fetchOne()
+
+            if (record == null){
+                println("\n$mensaje")
+                return Pair(false, 0)
+            } else {
+                val clienteId = record.get(CLIENTES.ID,Int::class.java)
+                return Pair(true, clienteId)
             }
         }
     }
 
     fun consultarDatosArticulo (codigo: Int) : List<Articulo> {
         val datos = mutableListOf<Articulo>()
-        val connection = DriverManager.getConnection(url)
-        val statement = connection.createStatement()
-        statement.use {
-            val resultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
-            resultSet.use {
-                val nombre = resultSet.getString("nombre")
-                val precio = resultSet.getDouble("precio")
-                val descripcion = resultSet.getString("descripcion")
-                val cantidadStock = resultSet.getInt("cantidadstok")
-                val descuento = resultSet.getInt("porcentaje_descuento")
-                val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStock,descuento)
-                datos.add(articulo)
-            }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val record = it.select()
+                .from(ARTICULOS)
+                .where(ARTICULOS.CODIGO.eq(codigo))
+                .fetchOne()
+            val nombre = record?.get(ARTICULOS.NOMBRE, String::class.java)?:""
+            val precio = record?.get(ARTICULOS.PRECIO,Double::class.java)?:0.0
+            val descripcion = record?.get(ARTICULOS.DESCRIPCION,String::class.java)?:""
+            val cantidadStock = record?.get(ARTICULOS.CANTIDADSTOK,Int::class.java)?:0
+            val descuento = record?.get(ARTICULOS.PORCENTAJE_DESCUENTO,Int::class.java)?:0
+            val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStock,descuento)
+            datos.add(articulo)
+
         }
         return datos
     }
 
     fun buscarPrecioArticulo (codigo : Int): Double  {
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
-                resultSet.use {
-                    if (!resultSet.next()){
-                        println("\n**ARTICULO NO EXISTE. INGRESE UN CODIGO VALIDO**")
-                        return 0.0
-                    }else {
-                        val precio = resultSet.getDouble("precio")
-                        return precio
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select()
+                .from(ARTICULOS)
+                .where(ARTICULOS.CODIGO.eq(codigo))
+                .fetchOne()
+            if (result == null){
+                return 0.0
+            }else{
+                val precio = result.get(ARTICULOS.PRECIO,Double::class.java)
+                return precio
             }
         }
     }
 
     fun buscarIdArticulo (codigo:Int, mensaje: String): Pair<Boolean, Int> {
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM articulos WHERE codigo = $codigo")
-                resultSet.use {
-                    if (!resultSet.next()){
-                        println(mensaje)
-                        return Pair(false, 0)
-                    }else {
-                        val idArticulo = resultSet.getInt("id")
-                        return Pair(true, idArticulo)
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select()
+                .from(ARTICULOS)
+                .where(ARTICULOS.CODIGO.eq(codigo))
+                .fetchOne()
+            if (result == null){
+                println(mensaje)
+                return Pair(false, 0)
+            } else {
+                val idArticulo = result.get(ARTICULOS.ID,Int::class.java)
+                return Pair(true, idArticulo)
             }
         }
     }
 
     fun actualizarStock(id: Int, cantidad : Int) {
-        val sql = "UPDATE articulos SET cantidadstok = cantidadstok - ? WHERE id = $id"
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.setInt(1,cantidad)
-            statement.use {
-                it.executeUpdate()
-            }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.update(ARTICULOS)
+                .set(ARTICULOS.CANTIDADSTOK, ARTICULOS.CANTIDADSTOK - cantidad)
+                .where(ARTICULOS.ID.eq(id))
+                .execute()
+            println("FILAS AFECTADAS:     $result")
         }
     }
 
     fun listarFacturas (offset: Int): MutableList<ListadoFacturas>{
-        val sql = """SELECT
-                        f.factura_numero,
-                        f.cliente_id,
-                        f.total,
-                        f.fecha,
-                        c.nombre
-                       FROM facturas f
-                       LEFT JOIN clientes c ON f.cliente_id = c.id
-                       WHERE c.nombre IS NOT NULL
-                       ORDER BY fecha DESC LIMIT 10 OFFSET ?;"""
         val facturas = mutableListOf<ListadoFacturas>()
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.setInt(1,offset)
-            statement.use {
-                val resultSet = it.executeQuery()
-                resultSet.use {
-                    while (resultSet.next()){
-                        val numero = resultSet.getInt("factura_numero")
-                        val cliente_id = resultSet.getInt("cliente_id")
-                        val total = resultSet.getDouble("total")
-                        val fecha = resultSet.getDate("fecha")
-                        val nombre = resultSet.getString("nombre")
-                        val factura = ListadoFacturas(numero,nombre,total,fecha)
-                        facturas.add(factura)
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select(
+                FACTURAS.FACTURA_NUMERO,
+                FACTURAS.CLIENTE_ID,
+                FACTURAS.TOTAL,
+                FACTURAS.FECHA,
+                CLIENTES.NOMBRE
+            )
+                .from(FACTURAS).leftJoin(CLIENTES).on(FACTURAS.CLIENTE_ID.eq(CLIENTES.ID))
+                .where(CLIENTES.NOMBRE.isNotNull)
+                .orderBy(FACTURAS.FECHA.desc())
+                .limit(10)
+                .offset(offset)
+                .fetch()
+            result.map { fac ->
+                val numero = fac.get(FACTURAS.FACTURA_NUMERO)?:0
+                val total = fac.get(FACTURAS.TOTAL)?.toDouble()?:0.0
+                val fecha = fac.get(FACTURAS.FECHA)?:""
+                val nombre = fac.get(CLIENTES.NOMBRE)?:""
+
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                val localDateTime = LocalDateTime.parse(fecha, formatter)
+                //val dateTime = LocalDateTime.parse(fecha,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                //2025-08-28 21:21:23
+                val date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
+                val factura = ListadoFacturas(numero,nombre,total,date)
+                facturas.add(factura)
             }
         }
         return facturas
     }
 
     fun validarFactura (numeroFactura : Int) : Boolean {
-        var facturaExistente = true
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resulset = it.executeQuery("SELECT * FROM facturas WHERE factura_numero = $numeroFactura")
-                resulset.use {
-                    if (!resulset.next()){
-                        println("***LA FACTURA NO EXISTE***\n")
-                        facturaExistente = false
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val records = it.select().from(FACTURAS).where(FACTURAS.FACTURA_NUMERO.eq(numeroFactura)).fetch()
+            if (records.isEmpty()){
+                println("***LA FACTURA NO EXISTE***\n")
+                return false
             }
         }
-        return facturaExistente
+        return true
     }
 
     fun datosFactura (numeroFactura :Int) :Pair<Factura,Cliente>? {
-        var sql = """SELECT 
-                        f.factura_numero,
-                        f.cliente_id,
-                        f.total,
-                        f.fecha,
-                        c.nombre,
-                        c.cedula,
-                        c.telefono,
-                        c.estado
-                    FROM facturas f 
-                    JOIN clientes c ON f.cliente_id = c.id
-                    WHERE f.factura_numero = ?; """
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                statement.setInt(1,numeroFactura)
-                val resultSet = statement.executeQuery()
-                if (resultSet.next()) {
-                    val numeroFactura = resultSet.getInt("factura_numero")
-                    val cliente_id = resultSet.getInt("cliente_id")
-                    val fecha = resultSet.getDate("fecha")
-                    val total = resultSet.getDouble("total")
-                    val nombre = resultSet.getString("nombre")
-                    val cedula = resultSet.getInt("cedula")
-                    val telefono = resultSet.getInt("telefono")
-                    val estado = resultSet.getString("estado")
-                    val factura = Factura(numeroFactura, cliente_id, total, fecha)
-                    val cliente = Cliente(nombre, cedula, telefono, estado)
-                    return Pair(factura,cliente)
-                }else return null
-            }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select(
+                FACTURAS.FACTURA_NUMERO,
+                FACTURAS.CLIENTE_ID,
+                FACTURAS.TOTAL,
+                FACTURAS.FECHA,
+                CLIENTES.NOMBRE,
+                CLIENTES.CEDULA,
+                CLIENTES.TELEFONO,
+                CLIENTES.ESTADO
+            ).from(FACTURAS)
+                .join(CLIENTES).on(FACTURAS.CLIENTE_ID.eq(CLIENTES.ID))
+                .where(FACTURAS.FACTURA_NUMERO.eq(numeroFactura)).fetchOne()
+            if (result == null) return null
+
+            val numeroFactura = result.get(FACTURAS.FACTURA_NUMERO)?:0
+            val cliente_id = result.get(FACTURAS.CLIENTE_ID)?:0
+            val fecha = result.get(FACTURAS.FECHA)?:""
+            val total = result.get(FACTURAS.TOTAL)?.toDouble()?:0.0
+            val nombre = result.get(CLIENTES.NOMBRE)?:""
+            val cedula = result.get(CLIENTES.CEDULA)?:0
+            val telefono = result.get(CLIENTES.TELEFONO)?:0
+            val estado = result.get(CLIENTES.ESTADO)?:""
+
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            val localDateTime = LocalDateTime.parse(fecha, formatter)
+            val date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
+
+            val factura = Factura(numeroFactura, cliente_id, total, date)
+            val cliente = Cliente(nombre, cedula, telefono, estado)
+            return Pair(factura,cliente)
         }
     }
 
     fun detallesFactura (numeroFactura: Int) : List<DetallesFactura>{
         val detalles = mutableListOf<DetallesFactura>()
-        val sql = """SELECT
-                        a.codigo,
-                        a.nombre,
-                        i.precio,
-                        i.cantidad,
-                        i.descuento,
-                        i.subtotal
-                    FROM items i
-                    JOIN facturas f  ON i.factura_id = f.factura_numero
-                    JOIN articulos a ON i.articulo_id = a.id
-                    WHERE f.factura_numero = ?;"""
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                statement.setInt(1, numeroFactura)
-                val resultSet = statement.executeQuery()
-                while (resultSet.next()){
-                    val codigo = resultSet.getInt("codigo")
-                    val nombre = resultSet.getString("nombre")
-                    val precio = resultSet.getDouble("precio")
-                    val cantidad = resultSet.getInt("cantidad")
-                    val descuento = resultSet.getDouble("descuento")
-                    val subtotal = resultSet.getDouble("subtotal")
-                    val detalle = DetallesFactura(codigo, nombre, precio, cantidad, descuento, subtotal)
-                    detalles.add(detalle)
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select(
+                ARTICULOS.CODIGO,
+                ARTICULOS.NOMBRE,
+                ITEMS.PRECIO,
+                ITEMS.CANTIDAD,
+                ITEMS.DESCUENTO,
+                ITEMS.SUBTOTAL
+            ).from(ITEMS)
+                .join(FACTURAS).on(ITEMS.FACTURA_ID.eq(FACTURAS.FACTURA_NUMERO))
+                .join(ARTICULOS).on(ITEMS.ARTICULO_ID.eq(ARTICULOS.ID))
+                .where(FACTURAS.FACTURA_NUMERO.eq(numeroFactura))
+                .fetch()
+            result.map { item ->
+                val codigo = item.get(ARTICULOS.CODIGO)?:0
+                val nombre = item.get(ARTICULOS.NOMBRE)?:""
+                val precio = item.get(ITEMS.PRECIO)?.toDouble()?:0.0
+                val cantidad = item.get(ITEMS.CANTIDAD)?:0
+                val descuento = item.get(ITEMS.DESCUENTO)?.toDouble()?:0.0
+                val subtotal = item.get(ITEMS.SUBTOTAL)?.toDouble()?:0.0
+                val detalle = DetallesFactura(codigo, nombre, precio, cantidad, descuento, subtotal)
+                detalles.add(detalle)
             }
         }
         return detalles
@@ -286,27 +252,20 @@ class DatabaseConection (private val url : String ) {
 
     fun listarArticulos (): MutableList<Articulo>{
         val articulos = mutableListOf<Articulo>()
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM articulos ORDER BY codigo")
-                resultSet.use {
-                    while (resultSet.next()){
-                        val id = resultSet.getInt("id")
-                        val codigo = resultSet.getInt("codigo")
-                        val nombre = resultSet.getString("nombre")
-                        val precio = resultSet.getDouble("precio")
-                        val descripcion = resultSet.getString("descripcion")
-                        val cantidadStok = resultSet.getInt("cantidadStok")
-                        val descuento = resultSet.getInt("porcentaje_descuento")
-                        val articulo = Articulo(codigo,nombre,precio,descripcion,cantidadStok,descuento)
-                        articulos.add(articulo)
-                    }
-                }
-
+        val dsl = DSL.using(url)
+        dsl.use {
+            val result = it.select().from(ARTICULOS).fetch()
+            val listaArticulos = result.map {
+                Articulo(
+                    it.get(ARTICULOS.CODIGO,Int::class.java),
+                    it.get(ARTICULOS.NOMBRE,String::class.java),
+                    it.get(ARTICULOS.PRECIO,Double::class.java),
+                    it.get(ARTICULOS.DESCRIPCION,String::class.java),
+                    it.get(ARTICULOS.CANTIDADSTOK,Int::class.java),
+                    it.get(ARTICULOS.PORCENTAJE_DESCUENTO,Int::class.java)
+                )
             }
-
+            articulos.addAll(listaArticulos)
         }
         return articulos
     }
@@ -314,57 +273,43 @@ class DatabaseConection (private val url : String ) {
     fun listarClientes (): MutableList<Cliente>{
 
         val listaClientes = mutableListOf<Cliente>()
-        val connection = DriverManager.getConnection(url)
-        connection.use {
-            val statement = it.createStatement()
-            statement.use {
-                val resultSet = it.executeQuery("SELECT * FROM clientes ORDER BY nombre")
-                resultSet.use {
-                    while (resultSet.next()){
-                        val id = resultSet.getInt("id")
-                        val nombre = resultSet.getString("nombre")
-                        val cedula = resultSet.getInt("cedula")
-                        val telefono = resultSet.getInt("telefono")
-                        val estado = resultSet.getString("estado")
-                        listaClientes.add(Cliente(nombre,cedula,telefono,estado))
-
-                    }
-                }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            val result = it.select().from(CLIENTES).orderBy(CLIENTES.NOMBRE)
+            result.map { client->
+                val nombre = client.get(CLIENTES.NOMBRE)?:""
+                val cedula = client.get(CLIENTES.CEDULA)?:0
+                val telefono = client.get(CLIENTES.TELEFONO)?:0
+                val estado = client.get(CLIENTES.ESTADO)?:""
+                listaClientes.add(Cliente(nombre,cedula,telefono,estado))
             }
         }
         return listaClientes
     }
 
     fun registrarCliente (nombre: String, cedula: Int, telefono: Int, estado: String):Int{
-        val sql = "INSERT INTO clientes (nombre, cedula, telefono, estado ) VALUES (?, ?, ?, ?)"
-        val conn = DriverManager.getConnection(url)
-        conn.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                it.setString(1,nombre)
-                it.setInt(2,cedula)
-                it.setInt(3,telefono)
-                it.setString(4,estado)
-                it.executeUpdate()
-                println("\n***REGISTRO EXITOSO***")
-            }
+        val dslContext = DSL.using(url)
+        dslContext.use {
+            it.insertInto(CLIENTES)
+                .columns(CLIENTES.NOMBRE, CLIENTES.CEDULA, CLIENTES.TELEFONO, CLIENTES.ESTADO)
+                .values(nombre,cedula,telefono,estado).execute()
+            println("\n***REGISTRO EXITOSO***")
         }
         return cedula
     }
 
     fun crearArticulo (codigo: Int, nombre: String, precio: Double, descripcion: String, cantidadDeStock: Int){
-        val sql = "INSERT INTO articulos (codigo, nombre, precio, descripcion, cantidadStok) VALUES (?, ?, ?, ?, ?)"
-        val conn = DriverManager.getConnection(url)
-        conn.use {
-            val statement = it.prepareStatement(sql)
-            statement.use {
-                it.setInt(1,codigo)
-                it.setString(2,nombre)
-                it.setDouble(3,precio)
-                it.setString(4,descripcion)
-                it.setInt(5,cantidadDeStock)
-                it.executeUpdate()
-            }
+        val dsl = DSL.using(url)
+        dsl.use {
+            val execute = it.insertInto(ARTICULOS)
+                .columns(
+                    ARTICULOS.CODIGO,
+                    ARTICULOS.NOMBRE,
+                    ARTICULOS.PRECIO,
+                    ARTICULOS.DESCRIPCION,
+                    ARTICULOS.CANTIDADSTOK
+                ).values(codigo, nombre, precio.toFloat(), descripcion, cantidadDeStock).execute()
+            println("\nREGISTROS NUEVOS: $execute")
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.jmvn.proyectos
 
+import java.text.SimpleDateFormat
+
 class FacturaManager (private val url : String) {
 
     val databaseConection = DatabaseConection(url)
@@ -73,7 +75,7 @@ class FacturaManager (private val url : String) {
                             var cantidad: Int = readln().toInt()
                             if (cantidad <= cantidaStock){
                                 var precio: Double = databaseConection.buscarPrecioArticulo(codigoArticulo)
-                                var idArticulo = databaseConection. buscarIdArticulo(codigoArticulo, mensaje).second
+                                var idArticulo = databaseConection.buscarIdArticulo(codigoArticulo, mensaje).second
 
                                 val resultado = timbrarArticulos(cantidad, precio, descuento, idArticulo, totalFactura, items)
                                 totalFactura = resultado.first
@@ -137,9 +139,13 @@ class FacturaManager (private val url : String) {
         val resultado = databaseConection.datosFactura(numero)
         val datosFactura = resultado?.first
         val datosCliente = resultado?.second
+
+        val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+        val format = simpleDateFormat.format(datosFactura?.fecha)
+
         println("${factura}${(datosFactura?.numero?:0).toString().padStart(43)}")
         println("$cliente${datosCliente?.nombre?.padStart(50)}")
-        println("$fecha${(datosFactura?.fecha?:0).toString().padStart(52)}")
+        println("$fecha${format.padStart(52)}")
         println("\n--------------------------RESUMEN--------------------------")
         println("Articulo   |")
         println("Cantidad   |   Precio unit   |   Descuento   |   Subtotal")

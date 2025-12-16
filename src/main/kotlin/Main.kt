@@ -1,5 +1,8 @@
 package com.jmvn.proyectos
 
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 
 fun main() {
 
@@ -29,10 +32,12 @@ fun main() {
                         println("NUM________CLIENTE__________TOTAL________FECHA")
 
                         facturas.forEach(){factura ->
+                            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                            val format = formatter.format(factura.fecha.toInstant().atZone(ZoneId.of("America/Bogota")))
                             print("${factura.factura_numero.toString().padEnd(6)}")
                             print("${factura.cliente.padEnd(22)}")
                             print("${factura.total.toString().padEnd(10)}")
-                            println("${factura.fecha.toString().padStart(12)}")
+                            println("${format.padStart(12)}")
                             contador ++
                         }
                         print("\nDESEA MOSTRAR LA SIGUIENTE PAGINA s/n: ")
