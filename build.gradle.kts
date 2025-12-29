@@ -12,10 +12,10 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("org.xerial:sqlite-jdbc:3.46.0.0")
-    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("com.mysql:mysql-connector-j:9.0.0")
     implementation("org.jooq:jooq:3.20.4")
-    jooqGenerator("org.xerial:sqlite-jdbc:3.40.0.0")
+    jooqGenerator("com.mysql:mysql-connector-j:9.0.0")
+    implementation("org.slf4j:slf4j-api:2.0.17")
 
 }
 
@@ -31,16 +31,19 @@ jooq {
         create("main") {
             jooqConfiguration.apply {
                 jdbc.apply {
-                    driver = "org.sqlite.JDBC"
-                    url = "jdbc:sqlite:SystemaFacturacion.db"  // ruta a tu archivo .db
-                    user = ""
-                    password = ""
+                    driver = "com.mysql.cj.jdbc.Driver"
+                    url = "jdbc:mysql://localhost:3306/sys_facturacion_empresarial" + // ruta a tu archivo .db
+                          "?useSSL=false" +
+                          "&serverTimezone=UTC" +
+                          "&allowPublicKeyRetrieval=true"
+                    user = "root"
+                    password = "Juanmideveloper@2024"
                 }
                 generator.apply {
                     name = "org.jooq.codegen.KotlinGenerator"
                     database.apply {
-                        name = "org.jooq.meta.sqlite.SQLiteDatabase"
-                        inputSchema = ""  // SQLite no usa schemas
+                        name = "org.jooq.meta.mysql.MySQLDatabase"
+                        inputSchema = "sys_facturacion_empresarial"
                     }
                     target.apply {
                         packageName = "com.jmvn.proyectos.tables"
@@ -49,5 +52,11 @@ jooq {
                 }
             }
         }
+    }
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("build/generated-src/jooq/main")
     }
 }

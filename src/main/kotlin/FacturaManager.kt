@@ -2,9 +2,9 @@ package com.jmvn.proyectos
 
 import java.text.SimpleDateFormat
 
-class FacturaManager (private val url : String) {
+class FacturaManager (private val url : String, private val user: String, private val password: String) {
 
-    val databaseConection = DatabaseConection(url)
+    val databaseConection = DatabaseConection(url,user,password)
 
     fun crearFactura() {
 
@@ -28,7 +28,7 @@ class FacturaManager (private val url : String) {
                 if (registar == "s"){
 
                     val mensaje = ""
-                    ClienteManager(url).registroCliente()
+                    ClienteManager(url,user,password).registroCliente()
                     validarCliente = databaseConection.consultarCedula(cedula, mensaje).first
 
                 }
@@ -119,7 +119,7 @@ class FacturaManager (private val url : String) {
         var subtotal= precio * cantidad  * (1 - descuento/100.0)
         var descuentoEnPesos = (precio * cantidad) - subtotal
         total += subtotal
-        var item = Item(idArticulo,cantidad,descuentoEnPesos,subtotal)
+        var item = Item(idArticulo,cantidad,descuentoEnPesos,subtotal,precio)
         items.add(item)
         return Pair(total, items)
     }

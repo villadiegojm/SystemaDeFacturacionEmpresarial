@@ -6,9 +6,14 @@ import java.time.format.DateTimeFormatter
 
 fun main() {
 
-    val url = "jdbc:sqlite:SystemaFacturacion.db"
-    val facturasManager = FacturaManager(url)
-    val articulosManager = ArticuloManager(url)
+    val url = "jdbc:mysql://localhost:3306/sys_facturacion_empresarial" +
+            "?useSSL=false" +
+            "&serverTimezone=UTC" +
+            "&allowPublicKeyRetrieval=true"
+    val user = "root"
+    val password = "Juanmideveloper@2024"
+    val facturasManager = FacturaManager(url,user,password)
+    val articulosManager = ArticuloManager(url,user, password)
     val menu = Menu()
     do {
         menu.mostrar()
@@ -56,7 +61,7 @@ fun main() {
                 }
             }
             3 -> {
-                val clientes = DatabaseConection(url).listarClientes()
+                val clientes = DatabaseConection(url,user,password).listarClientes()
                 if (clientes.isEmpty()){
                     println("no hay clientes en la base")
                 }else {
@@ -73,7 +78,7 @@ fun main() {
                 }
             }
             4 -> {
-                val articulos = DatabaseConection(url).listarArticulos()
+                val articulos = DatabaseConection(url,user,password).listarArticulos()
                 if (articulos.isEmpty()){
                     println("no hay articulos")
                 }else {
@@ -89,7 +94,7 @@ fun main() {
                 }
             }
             5 -> {
-                val articulos = DatabaseConection(url).listarArticulos()
+                val articulos = DatabaseConection(url,user,password).listarArticulos()
                 if (articulos.isEmpty()){
                     println("NO HAY INVENTARIO")
                 }else {
@@ -109,12 +114,12 @@ fun main() {
                 do {
                     print("NUMERO DE FACTURA QUE DESEA IMPRIMIR: ")
                     numero = readln().toInt()
-                    encontrarFactura = DatabaseConection(url).validarFactura(numero)
+                    encontrarFactura = DatabaseConection(url,user,password).validarFactura(numero)
                 }while (encontrarFactura == false)
                 facturasManager.imprimirFactura(numero)
             }
             7 -> {
-                    ClienteManager(url).registroCliente()
+                    ClienteManager(url,user, password).registroCliente()
             }
             8 -> {
                 articulosManager.creacionArticulo()

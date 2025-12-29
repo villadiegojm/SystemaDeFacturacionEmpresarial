@@ -1,10 +1,10 @@
 package com.jmvn.proyectos
 
-class ClienteManager (private val url : String) {
+class ClienteManager (private val url : String, val user: String, val password: String) {
 
     fun registroCliente () {
 
-        val databaseConection = DatabaseConection(url)
+        val databaseConection = DatabaseConection(url,user, password)
         var validacion = false
         while (validacion == false){
 
@@ -17,7 +17,7 @@ class ClienteManager (private val url : String) {
                 val nombre = readln()
 
                 print("numero de telefono: ")
-                val telefono = readln().toInt()
+                val telefono = readln()
 
                 val estado = "activo" //Default
                 databaseConection.registrarCliente(nombre, cedula, telefono, estado)

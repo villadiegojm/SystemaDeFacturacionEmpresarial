@@ -1,8 +1,8 @@
 package com.jmvn.proyectos
 
-class ArticuloManager (private val url : String) {
+class ArticuloManager (private val url : String, val user: String, val password: String) {
 
-    val databaseConection = DatabaseConection(url)
+    val databaseConection = DatabaseConection(url,user,password)
 
     fun creacionArticulo (){
 

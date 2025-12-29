@@ -11,10 +11,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class DatabaseConection (private val url : String ) {
+class DatabaseConection (private val url : String, val user: String, val password : String ) {
 
     fun consultarDatosCliente (cedula : Int) : Cliente {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val record = it.select()
                 .from(CLIENTES)
@@ -22,7 +22,7 @@ class DatabaseConection (private val url : String ) {
                 .fetchOne()
             val nombre = record?.get(ARTICULOS.NOMBRE,String::class.java)?:""
             val cedula = record?.get(CLIENTES.CEDULA,Int::class.java)?:0
-            val telefono = record?.get(CLIENTES.TELEFONO,Int::class.java)?:0
+            val telefono = record?.get(CLIENTES.TELEFONO,String::class.java)?:""
             val estado = record?.get(CLIENTES.ESTADO,String::class.java)?:""
             val cliente = Cliente(nombre, cedula, telefono, estado)
             return cliente
@@ -31,11 +31,11 @@ class DatabaseConection (private val url : String ) {
 
     fun guardarFactura (clienteId: Int, totalFactura: Double,items: MutableList<Item>) {
         var facturaId:Int
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val execute = it.insertInto(FACTURAS)
                 .set(FACTURAS.CLIENTE_ID, clienteId)
-                .set(FACTURAS.TOTAL, totalFactura.toFloat())
+                .set(FACTURAS.TOTAL, totalFactura)
                 .returning(FACTURAS.FACTURA_NUMERO)
                 .fetchOne()
             facturaId = execute?.facturaNumero ?: 0
@@ -44,22 +44,23 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun guardarItems (items: List<Item>, facturaId: Int){
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             for (item in items){
                 it.insertInto(ITEMS)
                     .set(ITEMS.FACTURA_ID,facturaId)
                     .set(ITEMS.ARTICULO_ID,item.id)
                     .set(ITEMS.CANTIDAD,item.cantidad)
-                    .set(ITEMS.DESCUENTO,item.descuento.toFloat())
-                    .set(ITEMS.SUBTOTAL,item.subtotal.toFloat())
+                    .set(ITEMS.DESCUENTO,item.descuento)
+                    .set(ITEMS.SUBTOTAL,item.subtotal)
+                    .set(ITEMS.PRECIO,item.precio)
                     .execute()
             }
         }
     }
 
     fun consultarCedula (cedula: Int, mensaje: String): Pair<Boolean,Int>{
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val record = it.select().from(CLIENTES).where(CLIENTES.CEDULA.eq(cedula)).fetchOne()
 
@@ -75,7 +76,7 @@ class DatabaseConection (private val url : String ) {
 
     fun consultarDatosArticulo (codigo: Int) : List<Articulo> {
         val datos = mutableListOf<Articulo>()
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val record = it.select()
                 .from(ARTICULOS)
@@ -94,7 +95,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun buscarPrecioArticulo (codigo : Int): Double  {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select()
                 .from(ARTICULOS)
@@ -110,7 +111,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun buscarIdArticulo (codigo:Int, mensaje: String): Pair<Boolean, Int> {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select()
                 .from(ARTICULOS)
@@ -127,7 +128,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun actualizarStock(id: Int, cantidad : Int) {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.update(ARTICULOS)
                 .set(ARTICULOS.CANTIDADSTOK, ARTICULOS.CANTIDADSTOK - cantidad)
@@ -139,7 +140,7 @@ class DatabaseConection (private val url : String ) {
 
     fun listarFacturas (offset: Int): MutableList<ListadoFacturas>{
         val facturas = mutableListOf<ListadoFacturas>()
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select(
                 FACTURAS.FACTURA_NUMERO,
@@ -157,14 +158,14 @@ class DatabaseConection (private val url : String ) {
             result.map { fac ->
                 val numero = fac.get(FACTURAS.FACTURA_NUMERO)?:0
                 val total = fac.get(FACTURAS.TOTAL)?.toDouble()?:0.0
-                val fecha = fac.get(FACTURAS.FECHA)?:""
+                val fecha = fac.get(FACTURAS.FECHA)?: LocalDateTime.now()
                 val nombre = fac.get(CLIENTES.NOMBRE)?:""
 
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                val localDateTime = LocalDateTime.parse(fecha, formatter)
+//                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+//                val localDateTime = LocalDateTime.parse(fecha, formatter)
                 //val dateTime = LocalDateTime.parse(fecha,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 //2025-08-28 21:21:23
-                val date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
+                val date = Date.from(fecha.atZone(ZoneId.systemDefault()).toInstant())
                 val factura = ListadoFacturas(numero,nombre,total,date)
                 facturas.add(factura)
             }
@@ -173,7 +174,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun validarFactura (numeroFactura : Int) : Boolean {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val records = it.select().from(FACTURAS).where(FACTURAS.FACTURA_NUMERO.eq(numeroFactura)).fetch()
             if (records.isEmpty()){
@@ -185,7 +186,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun datosFactura (numeroFactura :Int) :Pair<Factura,Cliente>? {
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select(
                 FACTURAS.FACTURA_NUMERO,
@@ -203,16 +204,16 @@ class DatabaseConection (private val url : String ) {
 
             val numeroFactura = result.get(FACTURAS.FACTURA_NUMERO)?:0
             val cliente_id = result.get(FACTURAS.CLIENTE_ID)?:0
-            val fecha = result.get(FACTURAS.FECHA)?:""
+            val fecha = result.get(FACTURAS.FECHA)?:LocalDateTime.now()
             val total = result.get(FACTURAS.TOTAL)?.toDouble()?:0.0
             val nombre = result.get(CLIENTES.NOMBRE)?:""
             val cedula = result.get(CLIENTES.CEDULA)?:0
-            val telefono = result.get(CLIENTES.TELEFONO)?:0
+            val telefono = result.get(CLIENTES.TELEFONO)?:""
             val estado = result.get(CLIENTES.ESTADO)?:""
 
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            val localDateTime = LocalDateTime.parse(fecha, formatter)
-            val date = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
+//            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+//            val localDateTime = LocalDateTime.parse(fecha, formatter)
+            val date = Date.from(fecha.atZone(ZoneId.systemDefault()).toInstant())
 
             val factura = Factura(numeroFactura, cliente_id, total, date)
             val cliente = Cliente(nombre, cedula, telefono, estado)
@@ -222,7 +223,7 @@ class DatabaseConection (private val url : String ) {
 
     fun detallesFactura (numeroFactura: Int) : List<DetallesFactura>{
         val detalles = mutableListOf<DetallesFactura>()
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select(
                 ARTICULOS.CODIGO,
@@ -252,7 +253,7 @@ class DatabaseConection (private val url : String ) {
 
     fun listarArticulos (): MutableList<Articulo>{
         val articulos = mutableListOf<Articulo>()
-        val dsl = DSL.using(url)
+        val dsl = DSL.using(url,user,password)
         dsl.use {
             val result = it.select().from(ARTICULOS).fetch()
             val listaArticulos = result.map {
@@ -273,13 +274,13 @@ class DatabaseConection (private val url : String ) {
     fun listarClientes (): MutableList<Cliente>{
 
         val listaClientes = mutableListOf<Cliente>()
-        val dslContext = DSL.using(url)
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             val result = it.select().from(CLIENTES).orderBy(CLIENTES.NOMBRE)
             result.map { client->
                 val nombre = client.get(CLIENTES.NOMBRE)?:""
                 val cedula = client.get(CLIENTES.CEDULA)?:0
-                val telefono = client.get(CLIENTES.TELEFONO)?:0
+                val telefono = client.get(CLIENTES.TELEFONO)?:""
                 val estado = client.get(CLIENTES.ESTADO)?:""
                 listaClientes.add(Cliente(nombre,cedula,telefono,estado))
             }
@@ -287,8 +288,8 @@ class DatabaseConection (private val url : String ) {
         return listaClientes
     }
 
-    fun registrarCliente (nombre: String, cedula: Int, telefono: Int, estado: String):Int{
-        val dslContext = DSL.using(url)
+    fun registrarCliente (nombre: String, cedula: Int, telefono: String, estado: String):Int{
+        val dslContext = DSL.using(url,user,password)
         dslContext.use {
             it.insertInto(CLIENTES)
                 .columns(CLIENTES.NOMBRE, CLIENTES.CEDULA, CLIENTES.TELEFONO, CLIENTES.ESTADO)
@@ -299,7 +300,7 @@ class DatabaseConection (private val url : String ) {
     }
 
     fun crearArticulo (codigo: Int, nombre: String, precio: Double, descripcion: String, cantidadDeStock: Int){
-        val dsl = DSL.using(url)
+        val dsl = DSL.using(url,user,password)
         dsl.use {
             val execute = it.insertInto(ARTICULOS)
                 .columns(
@@ -308,7 +309,7 @@ class DatabaseConection (private val url : String ) {
                     ARTICULOS.PRECIO,
                     ARTICULOS.DESCRIPCION,
                     ARTICULOS.CANTIDADSTOK
-                ).values(codigo, nombre, precio.toFloat(), descripcion, cantidadDeStock).execute()
+                ).values(codigo, nombre, precio, descripcion, cantidadDeStock).execute()
             println("\nREGISTROS NUEVOS: $execute")
         }
     }
