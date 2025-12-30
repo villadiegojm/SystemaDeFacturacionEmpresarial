@@ -12,11 +12,10 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("com.mysql:mysql-connector-j:9.0.0")
+    implementation("com.mysql:mysql-connector-j:9.5.0")
     implementation("org.jooq:jooq:3.20.4")
-    jooqGenerator("com.mysql:mysql-connector-j:9.0.0")
+    jooqGenerator("com.mysql:mysql-connector-j:9.5.0")
     implementation("org.slf4j:slf4j-api:2.0.17")
-    implementation("com.google.protobuf:protobuf-java:4.28.2")
 
 }
 
